@@ -1,10 +1,10 @@
 package epictree;
 
 import beast.core.Input;
+import beast.core.parameter.IntegerParameter;
 import beast.core.parameter.RealParameter;
 import beast.evolution.tree.MigrationModel;
 import beast.evolution.tree.MultiTypeNode;
-import beast.evolution.tree.Node;
 import multitypetree.distributions.MultiTypeTreeDistribution;
 
 import java.util.*;
@@ -20,8 +20,17 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
     public Input<RealParameter> originInput = new Input<>(
             "origin", "Origin time", Input.Validate.REQUIRED);
 
-    private MigrationModel migModel;
-    private RealParameter origin;
+    public Input<IntegerParameter> initialPopSizesInput = new Input<>(
+            "initialPopSizes", "Initial population sizes",
+            Input.Validate.REQUIRED);
+
+    public Input<Integer> nParticlesInput =new Input<>(
+            "nParticles", "Number of particles to use in algorithm",
+            Input.Validate.REQUIRED);
+
+    protected MigrationModel migModel;
+    protected RealParameter origin;
+    protected  int nParticles;
 
     class TreeInterval {
         double startTime, endTime;
@@ -32,7 +41,23 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
         int terminalSrcType, terminalDestType;
     }
 
-    private List<TreeInterval> treeIntervalList;
+    class ParticleState {
+
+        int[] n;
+
+        public ParticleState(int[] n) {
+            this.n = Arrays.copyOf(n, n.length);
+        }
+
+        public ParticleState(Integer[] nList) {
+            this.n = new int[nList.length];
+            for (int i=0; i<nList.length; i++)
+                this.n[i] = nList[i];
+        }
+
+    }
+
+    private List<TreeInterval> treeIntervalList = new ArrayList<>();
 
 
     @Override
@@ -47,27 +72,20 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
     public double calculateLogP() throws Exception {
         logP = 0.0;
 
-        List<MultiTypeNode> nodeList = new ArrayList<>();
-        for (Node node : mtTree.getNodesAsArray())
-            nodeList.add((MultiTypeNode)node);
-
-        nodeList.sort((o1, o2) -> {
-            if (o1.getHeight() > o2.getHeight())
-                return -1;
-
-            if (o1.getHeight() < o2.getHeight())
-                return 1;
-
-            return 0;
-        });
-
-        MultiTypeNode root = nodeList.get(0);
+        MultiTypeNode root = (MultiTypeNode) mtTree.getRoot();
 
         // Zero probability of events prior to origin.
         if (root.getFinalChangeTime()>origin.getValue())
             return Double.NEGATIVE_INFINITY;
 
         updateIntervalList();
+
+        List<ParticleState> particleStates = new ArrayList<>();
+
+        // Initialise particles:
+        for (int i=0; i<nParticlesInput.get(); i++) {
+            particleStates.add(new ParticleState(initialPopSizesInput.get().getValues()));
+        }
 
         return logP;
     }
@@ -122,7 +140,7 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
                             nextTreeInterval.terminalDestType = node.getChangeType(changeIdx-1);
                         else
                             nextTreeInterval.terminalDestType = node.getNodeType();
-                        nextTreeInterval.node = null;
+                        nextTreeInterval.node = node;
                     }
                 }
 
