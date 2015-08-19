@@ -19,7 +19,7 @@ import java.util.*;
 public class BDMMTreeDensity extends MultiTypeTreeDistribution {
 
     public Input<BDMigrationModel> migrationModelInput = new Input<>(
-            "migModel", "Migration model", Input.Validate.REQUIRED);
+            "migrationModel", "Migration model", Input.Validate.REQUIRED);
 
     public Input<RealParameter> originInput = new Input<>(
             "origin", "Origin time", Input.Validate.REQUIRED);
