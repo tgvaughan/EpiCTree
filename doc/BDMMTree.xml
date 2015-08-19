@@ -1,0 +1,41 @@
+<!-- Simulate a transmission tree from the BDMM epidemic model -->
+
+<beast version='2.0' namespace='master:master.model:master.conditions:master.outputs:master.postprocessors'>
+  <run spec='InheritanceTrajectory'
+       samplePopulationSizes="true"
+       simulationTime="7"
+       verbosity="1">
+
+    <model spec='Model' id='model'>
+      <populationType spec='PopulationType' id='I' typeName='I' dim="3"/>
+      
+      <reaction spec='Reaction' reactionName="Infection" rate="1">
+          I[i] -> 2I[i]
+      </reaction>
+      <reaction spec='Reaction' reactionName="Removal" rate="0.02">
+          I[i] -> 0
+      </reaction>
+      <reaction spec='Reaction' reactionName="Migration" rate="0.1">
+          <predicate spec="Predicate" value="i != j"/>
+          I[i] -> I[j]
+      </reaction>
+    </model>
+    
+    <initialState spec='InitState'>
+        <lineageSeed spec='Individual'>
+            <population spec='Population' type="@I" location="0"/>
+        </lineageSeed>
+    </initialState>
+
+    <!--inheritancePostProcessor spec="LineageSampler" pSample="0.1" samplingTime="5"
+        markAnnotation="mark"/-->
+    <inheritancePostProcessor spec="LineageSampler" nSamples="20" samplingTime="7" noClean="true" />
+
+    <!-- Simulation will terminate when no lineages remain -->
+    <lineageEndCondition spec='LineageEndCondition' nLineages="0"/>
+    
+    <output spec='NexusOutput' fileName='$(filebase)_output.nexus'/>
+    <output spec='JsonOutput' fileName='$(filebase)_output.json'/>
+  </run>
+</beast>
+

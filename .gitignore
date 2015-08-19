@@ -1,0 +1,19 @@
+# Build directories
+/dist
+/build
+/build-lib
+/out
+
+# intellij cruft
+/.idea
+/MultiTypeTree.iml
+/META-INF
+
+# Ignore BEAST logfiles
+*.log
+*.trees
+*.state
+
+# Other cruft:
+.localrc
+.localrcbye
