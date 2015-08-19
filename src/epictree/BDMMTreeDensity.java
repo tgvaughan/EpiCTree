@@ -1,5 +1,6 @@
 package epictree;
 
+import beast.core.Description;
 import beast.core.Input;
 import beast.core.parameter.IntegerParameter;
 import beast.core.parameter.RealParameter;
@@ -8,14 +9,13 @@ import beast.evolution.tree.Node;
 import beast.math.Binomial;
 import beast.util.Randomizer;
 import multitypetree.distributions.MultiTypeTreeDistribution;
-import org.apache.commons.math.distribution.BinomialDistribution;
-import org.apache.commons.math.distribution.BinomialDistributionImpl;
 
 import java.util.*;
 
 /**
  * @author Tim Vaughan <tgvaughan@gmail.com>
  */
+@Description("Probability density for coloured BDMM trees.")
 public class BDMMTreeDensity extends MultiTypeTreeDistribution {
 
     public Input<BDMigrationModel> migrationModelInput = new Input<>(
@@ -65,10 +65,6 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
         double[] migProp = new double[migModel.getNTypes()*migModel.getNTypes()];
         double totalBirthProp, totalDeathProp, totalSamplingProp, totalMigProp;
         double totalProp;
-
-        public Particle(int[] n) {
-            this.n = Arrays.copyOf(n, n.length);
-        }
 
         public Particle(Integer[] nList) {
             this.n = new int[nList.length];
@@ -185,39 +181,36 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
                     nContemp += 1;
             }
 
-            for (int pidx=0; pidx<nParticles; pidx++) {
+            for (int pIdx=0; pIdx<nParticles; pIdx++) {
                 int nTotal = 0;
-                for (int i=0; i<migModel.getNTypes(); i++) {
-                    nTotal += particles[pidx].n[i];
+                for (int typeIdx=0; typeIdx<migModel.getNTypes(); typeIdx++) {
+                    nTotal += particles[pIdx].n[typeIdx];
                 }
                 if (nTotal<nContemp) {
-                    weights[pidx] = 0.0;
+                    weights[pIdx] = 0.0;
                     continue;
                 }
 
                 if (contempSamplingProb.getValue()<1.0) {
                     double p = Math.log(contempSamplingProb.getValue());
-                    weights[pidx] = Math.exp(Binomial.logChoose(nTotal, nContemp)
+                    weights[pIdx] = Math.exp(Binomial.logChoose(nTotal, nContemp)
                             + nContemp * Math.log(p)
                             + (nTotal - nContemp) * Math.log(1.0 - p));
                     continue;
                 }
 
                 if (nContemp<nTotal)
-                    weights[pidx] = 0.0;
+                    weights[pIdx] = 0.0;
                 else
-                    weights[pidx] = 1.0;
+                    weights[pIdx] = 1.0;
             }
 
-            // Resample Particles
+            // Include sampling probability in tree density
+            double totalWeight = 0.0;
             for (int i=0; i<nParticles; i++) {
-                particlesPrime[i] = new Particle(
-                        particles[Randomizer.randomChoicePDF(weights)]);
+                totalWeight += weights[i];
             }
-
-            Particle[] tmp = particles;
-            particles = particlesPrime;
-            particlesPrime = tmp;
+            logP += Math.log(totalWeight/nParticles);
         }
 
         return logP;
@@ -228,9 +221,6 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
         double weight = 1.0;
 
         double t = interval.startTime;
-
-        double[] birthProp = new double[migModel.getNTypes()];
-        double[] deathProp = new double[migModel.getNTypes()];
 
         while (true) {
 
