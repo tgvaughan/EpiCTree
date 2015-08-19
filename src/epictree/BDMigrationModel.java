@@ -46,7 +46,11 @@ public class BDMigrationModel extends CalculationNode implements MigrationModel 
             "deathRates",
             "Death rates", Validate.REQUIRED);
 
-    protected RealParameter rateMatrix, birthRates, deathRates;
+    public Input<RealParameter> samplingRatesInput = new Input<>(
+            "samplingRates",
+            "Sampling rates", Validate.REQUIRED);
+
+    protected RealParameter rateMatrix, birthRates, deathRates, samplingRates;
     protected double mu, muSym;
     protected int nTypes;
     protected DoubleMatrix Q, R;
@@ -73,6 +77,7 @@ public class BDMigrationModel extends CalculationNode implements MigrationModel 
         birthRates = birthRatesInput.get();
         deathRates = deathRatesInput.get();
         rateMatrix = rateMatrixInput.get();
+        samplingRates = samplingRatesInput.get();
         nTypes = birthRatesInput.get().getDimension();
 
         if (deathRates.getDimension() != birthRates.getDimension())
@@ -199,6 +204,37 @@ public class BDMigrationModel extends CalculationNode implements MigrationModel 
     }
 
     /**
+     * Retrieve birth rate in deme i
+     *
+     * @param i deme
+     * @return birth rate
+     */
+    public double getBirthRate(int i) {
+        return birthRates.getValue(i);
+    }
+
+    /**
+     * Retrieve death rate in deme i
+     *
+     * @param i deme
+     * @return death rate
+     */
+    public double getDeathRate(int i) {
+        return deathRates.getValue(i);
+    }
+
+    /**
+     * Retrieve sampling rate in deme i
+     *
+     * @param i deme
+     * @return sampling rate
+     */
+    public double getSamplingRate(int i) {
+        return samplingRates.getValue(i);
+    }
+
+
+    /**
      * Obtain offset into "rate matrix" and associated flag arrays.
      * 
      * @param i
@@ -304,31 +340,6 @@ public class BDMigrationModel extends CalculationNode implements MigrationModel 
         }
         return matPowerList.get(n);
     }
-    
-    /**
-     * Return matrix containing upper bounds on elements from the powers
-     * of R if known.  Returns a matrix of ones if steady state has not yet
-     * been reached.
-     * 
-     * @param symmetric
-     * @return Matrix of upper bounds.
-     */
-    @Override
-    public DoubleMatrix getRpowMax(boolean symmetric) {
-        
-        if (symmetric) {
-            if (RsymPowSteady)
-                return RsymPowMax;
-            else
-                return DoubleMatrix.ones(nTypes, nTypes);
-        } else {
-            if (RpowSteady)
-                return RpowMax;
-            else
-                return DoubleMatrix.ones(nTypes, nTypes);
-        }
-    }
-    
     
     /**
      * Power above which R is known to be steady.
