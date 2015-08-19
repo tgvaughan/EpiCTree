@@ -4,6 +4,7 @@ import beast.core.Input;
 import beast.core.parameter.IntegerParameter;
 import beast.core.parameter.RealParameter;
 import beast.evolution.tree.MigrationModel;
+import beast.evolution.tree.SCMigrationModel;
 import beast.evolution.tree.MultiTypeNode;
 import multitypetree.distributions.MultiTypeTreeDistribution;
 
@@ -41,15 +42,16 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
         int terminalSrcType, terminalDestType;
     }
 
-    class ParticleState {
+    class Particle {
 
         int[] n;
+        double weight = 0.0;
 
-        public ParticleState(int[] n) {
+        public Particle(int[] n) {
             this.n = Arrays.copyOf(n, n.length);
         }
 
-        public ParticleState(Integer[] nList) {
+        public Particle(Integer[] nList) {
             this.n = new int[nList.length];
             for (int i=0; i<nList.length; i++)
                 this.n[i] = nList[i];
@@ -80,14 +82,28 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
 
         updateIntervalList();
 
-        List<ParticleState> particleStates = new ArrayList<>();
+        List<Particle> particles = new ArrayList<>();
 
         // Initialise particles:
         for (int i=0; i<nParticlesInput.get(); i++) {
-            particleStates.add(new ParticleState(initialPopSizesInput.get().getValues()));
+            particles.add(new Particle(initialPopSizesInput.get().getValues()));
         }
 
         return logP;
+    }
+
+    protected void updateParticle(Particle particle, TreeInterval interval) {
+
+        double t = interval.startTime;
+
+        while (true) {
+
+            // Compute propensities
+
+            // Update time
+
+            // Implement reaction and update weight
+        }
     }
 
     /**
