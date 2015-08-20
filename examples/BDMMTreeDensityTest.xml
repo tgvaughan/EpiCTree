@@ -21,7 +21,7 @@
         verbosity="1">
 
         <model spec='Model' id='model'>
-            <populationType spec='PopulationType' id='I' typeName='I' dim="2"/>
+            <populationType spec='PopulationType' id='I' typeName='I' dim="1"/>
 
             <reaction spec='Reaction' reactionName="Infection" rate="1">
                 I[i] -> 2I[i]
@@ -41,7 +41,7 @@
             </lineageSeed>
         </initialState>
 
-        <inheritancePostProcessor spec="LineageSampler" nSamples="20" samplingTime="7" noClean="false" />
+        <inheritancePostProcessor spec="LineageSampler" pSample="0.1" samplingTime="7" noClean="false" />
 
         <!-- Simulation will terminate when no lineages remain -->
         <lineageEndCondition spec='LineageEndCondition' nLineages="0"/>
@@ -61,12 +61,12 @@
                 <multiTypeTree idref="mtTree"/>
                 <origin spec="RealParameter" value="7"/>
                 <initialPopSizes spec="IntegerParameter" value="1 0"/>
-                <contempSamplingProb spec="RealParameter" value="0.5"/>
+                <contempSamplingProb spec="RealParameter" value="0.1"/>
                 <migrationModel spec="BDMigrationModel">
-                    <rateMatrix spec="RealParameter" value="0.1 0.1"/>
-                    <birthRates spec="RealParameter" value="1 1"/>
-                    <deathRates spec="RealParameter" value="0.02 0.02"/>
-                    <samplingRates spec="RealParameter" value="0.0 0.0"/>
+                    <rateMatrix spec="RealParameter" value="0" dimension="2"/>
+                    <birthRates spec="RealParameter" value="1" dimension="2"/>
+                    <deathRates spec="RealParameter" value="0.02" dimension="2"/>
+                    <samplingRates spec="RealParameter" value="0.0" dimension="2"/>
                 </migrationModel>
             </distribution>
         </distribution>

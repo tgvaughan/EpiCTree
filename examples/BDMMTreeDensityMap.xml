@@ -1,0 +1,89 @@
+<!-- Simulate a transmission tree from the BDMM epidemic model -->
+
+<beast version='2.0' namespace='
+    beast.core
+    :beast.util
+    :beast.core.util
+    :beast.core.parameter
+    :beast.evolution.tree
+    :beast.evolution.operators
+    :beast.evolution.likelihood
+    :master
+    :master.model
+    :master.conditions
+    :master.outputs
+    :master.postprocessors
+    :epictree
+    :epictree.util'>
+
+    <!--input id="mtTree" spec='MultiTypeTreeFromNewick' typeLabel="location">
+        <![CDATA[
+
+        ]]>
+    </input-->
+    
+    <input  id="mtTree" spec="MultiTypeTreeFromFlatTree" typeLabel="location">
+        <flatTree spec='BeastTreeFromMaster'
+            samplePopulationSizes="true"
+            simulationTime="7"
+            reverseTime="false"
+            collapseSingletons="false"
+            verbosity="1">
+
+            <model spec='Model' id='model'>
+                <populationType spec='PopulationType' id='I' typeName='I' dim="1"/>
+
+                <reaction spec='Reaction' reactionName="Infection" rate="1">
+                    I[i] -> 2I[i]
+                </reaction>
+                <reaction spec='Reaction' reactionName="Removal" rate="0.02">
+                    I[i] -> 0
+                </reaction>
+                <reaction spec='Reaction' reactionName="Migration" rate="0.5">
+                    <predicate spec="Predicate" value="i != j"/>
+                    I[i] -> I[j]
+                </reaction>
+            </model>
+
+            <initialState spec='InitState'>
+                <lineageSeed spec='Individual'>
+                    <population spec='Population' type="@I" location="0"/>
+                </lineageSeed>
+            </initialState>
+
+            <inheritancePostProcessor spec="LineageSampler" pSample="0.1" samplingTime="7" noClean="false" />
+
+            <!-- Simulation will terminate when no lineages remain -->
+            <lineageEndCondition spec='LineageEndCondition' nLineages="0"/>
+
+            <output spec='NexusOutput' fileName='$(filebase)_output.nexus'/>
+            <output spec='JsonOutput' fileName='$(filebase)_output.json'/>
+        </flatTree>
+    </input>
+
+    <run spec="DensityMapper">
+
+        <realParam id="samplingProb" spec="RealParameter" value="0" lower="0.05" upper="0.15"/>
+        <steps spec="IntegerParameter" value="10"/>
+
+        <distribution spec="BDMMTreeDensity" id="treeDensity" nParticles="10000">
+            <multiTypeTree idref="mtTree"/>
+            <origin spec="RealParameter" value="7"/>
+            <initialPopSizes spec="IntegerParameter" value="1 0"/>
+            <contempSamplingProb idref="samplingProb"/>
+            <migrationModel spec="BDMigrationModel">
+                <rateMatrix spec="RealParameter" value="0.5 0.5"/>
+                <birthRates spec="RealParameter" value="1 1"/>
+                <deathRates spec="RealParameter" value="0.02 0.02"/>
+                <samplingRates spec="RealParameter" value="0.0 0.0"/>
+            </migrationModel>
+        </distribution>
+
+        <logger logEvery="1">
+            <log idref="samplingProb"/>
+            <log idref="treeDensity"/>
+        </logger>
+
+    </run>
+</beast>
+

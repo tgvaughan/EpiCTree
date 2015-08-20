@@ -152,10 +152,9 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
         Particle[] particlesPrime = new Particle[nParticles];
         double[] weights = new double[nParticles];
 
-        // Initialise particles and weights:
+        // Initialise particles:
         for (int i=0; i<nParticles; i++) {
             particles[i] = new Particle(initialPopSizesInput.get().getValues());
-            weights[i] = 1.0;
         }
 
         for (TreeInterval interval : treeIntervalList) {
@@ -185,6 +184,9 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
             particles = particlesPrime;
             particlesPrime = tmp;
         }
+
+        if (logP == Double.NEGATIVE_INFINITY)
+            System.out.println("Zero density before sampling");
 
         // Include probability of contemporaneous sampling:
 
@@ -227,6 +229,9 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
             logP += Math.log(totalWeight/nParticles);
         }
 
+        if (logP == Double.NEGATIVE_INFINITY)
+            System.out.println("Zero density after sampling");
+
         return logP;
     }
 
@@ -265,8 +270,9 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
 
                 for (int i=0; i<migModel.getNTypes(); i++) {
                     if (u<particle.birthProp[i]) {
-                        if (Randomizer.nextInt(particle.n[i]) < interval.k[i])
-                            weight *= 2.0;
+//                        if (Randomizer.nextInt(particle.n[i]) < interval.k[i])
+//                            weight *= 2.0;
+                        weight *= 1.0 + interval.k[i]/(double)particle.n[i];
 
                         particle.n[i] += 1;
                         break;
@@ -281,8 +287,9 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
             if (u<particle.totalDeathProp) {
                 for (int i=0; i<migModel.getNTypes(); i++) {
                     if (u<particle.deathProp[i]) {
-                        if (Randomizer.nextInt(particle.n[i]) < interval.k[i])
-                            return 0.0;
+//                        if (Randomizer.nextInt(particle.n[i]) < interval.k[i])
+//                            return 0.0;
+                        weight *= 1.0 - interval.k[i]/(double)particle.n[i];
 
                         particle.n[i] -= 1;
                         break;
@@ -302,8 +309,9 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
                             continue;
 
                         if (u < particle.getMigProp(i, j)) {
-                            if (Randomizer.nextInt(particle.n[i]) < interval.k[i])
-                                return 0.0;
+//                            if (Randomizer.nextInt(particle.n[i]) < interval.k[i])
+//                                return 0.0;
+                            weight *= 1.0 - interval.k[i]/(double)particle.n[i];
 
                             particle.n[i] -= 1;
                             particle.n[j] += 1;
