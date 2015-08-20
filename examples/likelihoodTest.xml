@@ -17,6 +17,7 @@
         samplePopulationSizes="true"
         simulationTime="7"
         reverseTime="false"
+        collapseSingletons="false"
         verbosity="1">
 
         <model spec='Model' id='model'>
@@ -28,7 +29,7 @@
             <reaction spec='Reaction' reactionName="Removal" rate="0.02">
                 I[i] -> 0
             </reaction>
-            <reaction spec='Reaction' reactionName="Migration" rate="0.1">
+            <reaction spec='Reaction' reactionName="Migration" rate="0.5">
                 <predicate spec="Predicate" value="i != j"/>
                 I[i] -> I[j]
             </reaction>
@@ -40,7 +41,7 @@
             </lineageSeed>
         </initialState>
 
-        <inheritancePostProcessor spec="LineageSampler" nSamples="20" samplingTime="7" noClean="true" />
+        <inheritancePostProcessor spec="LineageSampler" nSamples="20" samplingTime="7" noClean="false" />
 
         <!-- Simulation will terminate when no lineages remain -->
         <lineageEndCondition spec='LineageEndCondition' nLineages="0"/>

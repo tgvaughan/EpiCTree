@@ -53,6 +53,20 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
         public double getLength() {
             return endTime-startTime;
         }
+
+        @Override
+        public String toString() {
+            String type;
+            if (terminalDestType<0) {
+                if (node.isLeaf())
+                    type = "Sample";
+                else
+                    type = "Branch";
+            } else
+                type = "Migrate";
+
+            return String.format("[%g,%g] -> %s", startTime, endTime, type);
+        }
     }
 
     class Particle {
@@ -192,7 +206,7 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
                 }
 
                 if (contempSamplingProb.getValue()<1.0) {
-                    double p = Math.log(contempSamplingProb.getValue());
+                    double p = contempSamplingProb.getValue();
                     weights[pIdx] = Math.exp(Binomial.logChoose(nTotal, nContemp)
                             + nContemp * Math.log(p)
                             + (nTotal - nContemp) * Math.log(1.0 - p));
@@ -334,7 +348,7 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
         activeChangeIndices.put(rootNode, rootNode.getChangeCount()-1);
 
         // Initialise lineage count per colour array:
-        int[] k = new int[mtTree.getNTypes()];
+        int[] k = new int[migModel.getNTypes()];
         k[rootNode.getFinalType()] = 1;
 
         double t = 0.0;
