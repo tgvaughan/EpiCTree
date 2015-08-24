@@ -2,7 +2,6 @@ package epictree;
 
 import beast.core.Description;
 import beast.core.Input;
-import beast.core.parameter.IntegerParameter;
 import beast.core.parameter.RealParameter;
 import beast.evolution.tree.MultiTypeNode;
 import beast.evolution.tree.Node;
@@ -24,13 +23,15 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
     public Input<RealParameter> originInput = new Input<>(
             "origin", "Origin time", Input.Validate.REQUIRED);
 
+    /*
     public Input<IntegerParameter> initialPopSizesInput = new Input<>(
             "initialPopSizes", "Initial population sizes",
             Input.Validate.REQUIRED);
+            */
 
-    public Input<RealParameter> contempSamplingProbInput = new Input<>(
-            "contempSamplingProb",
-            "Probability of sampling lineages that survive until present.",
+    public Input<RealParameter> contempSamplingProbsInput = new Input<>(
+            "contempSamplingProbs",
+            "State-dependent Probability of sampling lineages that survive until present.",
             Input.Validate.REQUIRED);
 
     public Input<Integer> nParticlesInput =new Input<>(
@@ -39,8 +40,9 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
 
     protected BDMigrationModel migModel;
     protected RealParameter origin;
-    protected RealParameter contempSamplingProb;
-    protected  int nParticles;
+    protected RealParameter contempSamplingProbs;
+    protected int nParticles;
+    protected int[] nContemp;
 
     class TreeInterval {
         double startTime, endTime;
@@ -84,6 +86,11 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
             this.n = new int[nList.length];
             for (int i=0; i<nList.length; i++)
                 this.n[i] = nList[i];
+        }
+
+        public Particle(int type) {
+            this.n = new int[migModel.getNTypes()];
+            this.n[type] = 1;
         }
 
         public Particle(Particle other) {
@@ -133,7 +140,14 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
         migModel = migrationModelInput.get();
         origin = originInput.get();
         nParticles = nParticlesInput.get();
-        contempSamplingProb = contempSamplingProbInput.get();
+        contempSamplingProbs = contempSamplingProbsInput.get();
+
+        // Compute number of contemporaneous samples
+        nContemp = new int[migModel.getNTypes()];
+        for (Node node : mtTree.getExternalNodes()) {
+            if (node.getHeight() == 0.0)
+                nContemp[((MultiTypeNode) node).getNodeType()] += 1;
+        }
     }
 
     @Override
@@ -154,7 +168,7 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
 
         // Initialise particles:
         for (int i=0; i<nParticles; i++) {
-            particles[i] = new Particle(initialPopSizesInput.get().getValues());
+            particles[i] = new Particle(Randomizer.nextInt(migModel.getNTypes()));
         }
 
         for (TreeInterval interval : treeIntervalList) {
@@ -190,35 +204,27 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
 
         // Include probability of contemporaneous sampling:
 
-        if (contempSamplingProb.getValue()>0.0) {
-            int nContemp = 0;
-            for (Node node : mtTree.getExternalNodes()) {
-                if (node.getHeight()==0.0)
-                    nContemp += 1;
-            }
-
+        if (contempSamplingProbs.getValue()>0.0) {
             for (int pIdx=0; pIdx<nParticles; pIdx++) {
-                int nTotal = 0;
                 for (int typeIdx=0; typeIdx<migModel.getNTypes(); typeIdx++) {
-                    nTotal += particles[pIdx].n[typeIdx];
-                }
-                if (nTotal<nContemp) {
-                    weights[pIdx] = 0.0;
-                    continue;
-                }
+                    int thisN = particles[pIdx].n[typeIdx];
+                    if (thisN < nContemp[typeIdx]) {
+                        weights[pIdx] = 0;
+                        continue;
+                    }
+                    if (contempSamplingProbs.getValue(typeIdx) < 1.0) {
+                        double p = contempSamplingProbs.getValue(typeIdx);
+                        weights[pIdx] = Math.exp(Binomial.logChoose(thisN, nContemp[typeIdx])
+                                + nContemp[typeIdx] * Math.log(p)
+                                + (thisN - nContemp[typeIdx]) * Math.log(1.0 - p));
+                        continue;
+                    }
 
-                if (contempSamplingProb.getValue()<1.0) {
-                    double p = contempSamplingProb.getValue();
-                    weights[pIdx] = Math.exp(Binomial.logChoose(nTotal, nContemp)
-                            + nContemp * Math.log(p)
-                            + (nTotal - nContemp) * Math.log(1.0 - p));
-                    continue;
+                    if (nContemp[typeIdx] < thisN)
+                        weights[pIdx] = 0.0;
+                    else
+                        weights[pIdx] = 1.0;
                 }
-
-                if (nContemp<nTotal)
-                    weights[pIdx] = 0.0;
-                else
-                    weights[pIdx] = 1.0;
             }
 
             // Include sampling probability in tree density

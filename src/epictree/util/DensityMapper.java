@@ -20,7 +20,7 @@ public class DensityMapper extends beast.core.Runnable {
 
     public Input<List<IntegerParameter>> stepsInput = new Input<>(
             "steps",
-            "Number of steps to take between parameter bounds (minimum 2).",
+            "Number of steps to take between parameter bounds (minimum 1).",
             new ArrayList<>());
 
     public Input<List<Distribution>> distribsInput = new Input<>(
@@ -107,7 +107,9 @@ public class DensityMapper extends beast.core.Runnable {
             int nSteps = stepsInput.get().get(paramIdx).getValue(elIdx);
             RealParameter param = realParamsInput.get().get(paramIdx);
 
-            double delta = (param.getUpper()-param.getLower())/(nSteps-1);
+            double delta = nSteps > 1
+                    ? (param.getUpper()-param.getLower())/(nSteps-1)
+                    : 0.0; // Unused in this case.
 
             for (int i=0; i<stepsInput.get().get(paramIdx).getValue(elIdx); i++) {
                 param.setValue(elIdx, param.getLower() + i*delta);

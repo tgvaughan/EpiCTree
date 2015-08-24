@@ -21,7 +21,7 @@
         verbosity="1">
 
         <model spec='Model' id='model'>
-            <populationType spec='PopulationType' id='I' typeName='I' dim="1"/>
+            <populationType spec='PopulationType' id='I' typeName='I' dim="2"/>
 
             <reaction spec='Reaction' reactionName="Infection" rate="1">
                 I[i] -> 2I[i]
