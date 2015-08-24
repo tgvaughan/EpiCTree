@@ -176,7 +176,8 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
             // Update Particles
             double totalWeight = 0.0;
             for (int i=0; i<nParticles; i++) {
-                weights[i] = updateParticle(particles[i], interval);
+//                weights[i] = updateParticle(particles[i], interval);
+                weights[i] = updateParticleTL(particles[i], interval, origin.getValue()/500);
                 totalWeight += weights[i];
             }
 
@@ -326,6 +327,85 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
                 }
             }
         }
+
+        if (interval.terminalDestType<0) {
+            if (!interval.node.isLeaf()) {
+                weight *= migModel.getBirthRate(interval.terminalSrcType);
+            } else {
+                if (interval.endTime < origin.getValue()) {
+                    weight *= migModel.getSamplingRate(interval.terminalSrcType);
+                }
+            }
+        } else {
+            weight *= migModel.getForwardRate(
+                    interval.terminalSrcType, interval.terminalDestType);
+        }
+
+        return weight;
+    }
+
+    protected double updateParticleTL(Particle particle, TreeInterval interval, double maxDt) {
+
+        double weight = 1.0;
+
+        boolean isLast = false;
+        double t = interval.startTime;
+        do {
+
+            double tnew = t + maxDt;
+            if (tnew>interval.endTime) {
+                isLast = true;
+                tnew = interval.endTime;
+            }
+            double dt = tnew-t;
+            t = tnew;
+
+
+            particle.updatePropensities();
+
+            double[] k_on_n = new double[migModel.getNTypes()];
+            for (int i=0; i<migModel.getNTypes(); i++)
+                k_on_n[i] = interval.k[i]/(double)particle.n[i];
+
+            for (int i=0; i<migModel.getNTypes(); i++) {
+                int nBirth = particle.birthProp[i]>0.0
+                        ? (int)Math.round(Randomizer.nextPoisson(dt*particle.birthProp[i]))
+                        : 0;
+                int nDeath = particle.deathProp[i]>0.0
+                        ? (int)Math.round(Randomizer.nextPoisson(dt*particle.deathProp[i]))
+                        : 0;
+                int nSamp = particle.samplingProp[i]>0.0
+                        ? (int)Math.round(Randomizer.nextPoisson(dt*particle.samplingProp[i]))
+                        : 0;
+
+                if (nSamp>0)
+                    return 0.0;
+
+                weight *= Math.pow(1.0 + k_on_n[i], nBirth);
+                weight *= Math.pow(1.0 - k_on_n[i], nDeath);
+
+                particle.n[i] += nBirth - nDeath;
+
+                for (int j=0; j<migModel.getNTypes(); j++) {
+                    if (j==i)
+                        continue;
+
+                    int nMigrate = particle.getMigProp(i, j)>0.0
+                            ? (int)Math.round(Randomizer.nextPoisson(dt*particle.getMigProp(i,j)))
+                            : 0;
+
+                    weight *= Math.pow(1.0 - k_on_n[i], nMigrate);
+
+                    particle.n[i] -= nMigrate;
+                    particle.n[j] += nMigrate;
+                }
+            }
+
+            for (int i=0; i<migModel.getNTypes(); i++) {
+                if (particle.n[i]<interval.k[i])
+                    return 0.0;
+            }
+        } while (!isLast);
 
         if (interval.terminalDestType<0) {
             if (!interval.node.isLeaf()) {

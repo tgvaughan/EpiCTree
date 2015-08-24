@@ -50,7 +50,7 @@
                 </lineageSeed>
             </initialState>
 
-            <inheritancePostProcessor spec="LineageSampler" nSamples="10" samplingTime="7" noClean="false" />
+            <inheritancePostProcessor spec="LineageSampler" pSample="0.1" samplingTime="7" noClean="false" />
 
             <!-- Simulation will terminate when no lineages remain -->
             <lineageEndCondition spec='LineageEndCondition' nLineages="0" isRejection="true"/>
@@ -62,39 +62,68 @@
 
     <run spec="DensityMapper">
 
-        <realParam id="samplingProbs" spec="RealParameter" value="0 0" lower="0.05" upper="0.15"/>
-        <steps spec="IntegerParameter" value="10 1"/>
+        <realParam id="birthRate" spec="RealParameter" value="0 0" lower="0.5" upper="1"/>
+        <steps spec="IntegerParameter" value="100"/>
 
-        <distribution spec="BDMMTreeDensity" id="treeDensity" nParticles="1000">
-            <multiTypeTree idref="mtTree"/>
-            <origin spec="RealParameter" value="7"/>
-            <contempSamplingProbs idref="samplingProbs"/>
-            <migrationModel spec="BDMigrationModel">
-                <rateMatrix spec="RealParameter" value="0.5 0.5"/>
-                <birthRates spec="RealParameter" value="1 1"/>
-                <deathRates spec="RealParameter" value="0.02 0.02"/>
-                <samplingRates spec="RealParameter" value="0.0 0.0"/>
-            </migrationModel>
-        </distribution>
+        <!--realParam id="birthRate" spec="RealParameter" value="0 0" lower="5.8562" upper="10"/>
+        <steps spec="IntegerParameter" value="1"/-->
 
         <distribution spec="BirthDeathMigrationModel" id="treeDensityDenise"
                 contemp="true" stateNumber="2">
             <tree idref="mtTree"/>
+            <originBranch spec="RootBranchFromMultiTypeTree" multiTypeTree="@mtTree"/>
             <frequencies spec="RealParameter" value="0.5 0.5"/>
             <origin spec="RealParameter" value="7"/>
-            <rho idref="samplingProbs"/>
+            <rho spec="RealParameter" value="0.1 0.1"/>
             <migrationMatrix spec="RealParameter" value="0.5 0.5"/>
-            <birthRate spec="RealParameter" value="1 1"/>
+            <!--birthRate spec="RealParameter" value="1 1"/-->
+            <birthRate idref="birthRate"/>
             <deathRate spec="RealParameter" value="0.02 0.02"/>
             <samplingRate spec="RealParameter" value="0.0 0.0"/>
             <!--removalProbability spec="RealParameter" value="1.0"/-->
         </distribution>
 
+        <distribution spec="BirthDeathMigrationModel" id="treeDensityDeniseRK"
+                contemp="true" stateNumber="2" useRK="true">
+            <tree idref="mtTree"/>
+            <originBranch spec="RootBranchFromMultiTypeTree" multiTypeTree="@mtTree"/>
+            <frequencies spec="RealParameter" value="0.5 0.5"/>
+            <origin spec="RealParameter" value="7"/>
+            <rho spec="RealParameter" value="0.1 0.1"/>
+            <migrationMatrix spec="RealParameter" value="0.5 0.5"/>
+            <!--birthRate spec="RealParameter" value="1 1"/-->
+            <birthRate idref="birthRate"/>
+            <deathRate spec="RealParameter" value="0.02 0.02"/>
+            <samplingRate spec="RealParameter" value="0.0 0.0"/>
+            <!--removalProbability spec="RealParameter" value="1.0"/-->
+        </distribution>
+
+        <distribution spec="BDMMTreeDensity" id="treeDensityPF" nParticles="500">
+            <multiTypeTree idref="mtTree"/>
+            <origin spec="RealParameter" value="7"/>
+            <contempSamplingProbs spec="RealParameter" value="0.1 0.1"/>
+            <migrationModel spec="BDMigrationModel">
+                <rateMatrix spec="RealParameter" value="0.5 0.5"/>
+                <!--birthRates spec="RealParameter" value="1 1"/-->
+                <birthRates idref="birthRate"/>
+                <deathRates spec="RealParameter" value="0.02 0.02"/>
+                <samplingRates spec="RealParameter" value="0.0 0.0"/>
+            </migrationModel>
+        </distribution>
+
 
         <logger logEvery="1">
-            <log idref="samplingProbs"/>
-            <log idref="treeDensity"/>
+            <log idref="birthRate"/>
             <log idref="treeDensityDenise"/>
+            <log idref="treeDensityDeniseRK"/>
+            <log idref="treeDensityPF"/>
+        </logger>
+
+        <logger logEvery="1" fileName="$(filebase)_output.log">
+            <log idref="birthRate"/>
+            <log idref="treeDensityDenise"/>
+            <log idref="treeDensityDeniseRK"/>
+            <log idref="treeDensityPF"/>
         </logger>
 
     </run>
