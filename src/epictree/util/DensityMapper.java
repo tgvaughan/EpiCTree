@@ -52,9 +52,11 @@ public class DensityMapper extends beast.core.Runnable {
         nValues = 0;
         for (int i=0; i<realParamsInput.get().size(); i++) {
             int thisN = realParamsInput.get().get(i).getDimension();
-            if (stepsInput.get().get(i).getDimension() != thisN)
+            if (stepsInput.get().get(i).getDimension() != 1
+                    && stepsInput.get().get(i).getDimension() != thisN)
                 throw new IllegalArgumentException("Dimension of step sizes " +
-                        "must match dimension of real params.");
+                        "param must be 1 or the dimension of the associated " +
+                        "real param.");
 
             nValues += thisN;
         }
@@ -104,17 +106,32 @@ public class DensityMapper extends beast.core.Runnable {
                 count += thisParam.getDimension();
             }
 
-            int nSteps = stepsInput.get().get(paramIdx).getValue(elIdx);
+            boolean stepAll = stepsInput.get().get(paramIdx).getDimension() == 1;
+
+            int nSteps;
+            if (stepAll)
+                nSteps = stepsInput.get().get(paramIdx).getValue();
+            else
+                nSteps = stepsInput.get().get(paramIdx).getValue(elIdx);
+
             RealParameter param = realParamsInput.get().get(paramIdx);
 
             double delta = nSteps > 1
                     ? (param.getUpper()-param.getLower())/(nSteps-1)
                     : 0.0; // Unused in this case.
 
-            for (int i=0; i<stepsInput.get().get(paramIdx).getValue(elIdx); i++) {
-                param.setValue(elIdx, param.getLower() + i*delta);
+            if (stepAll) {
+                for (int i=0; i<stepsInput.get().get(paramIdx).getValue(); i++) {
+                    for (elIdx = 0; elIdx < param.getDimension(); elIdx++)
+                        param.setValue(elIdx, param.getLower() + i * delta);
 
-                nestedLoop(depth + 1);
+                    nestedLoop(depth + param.getDimension());
+                }
+            } else {
+                for (int i=0; i<stepsInput.get().get(paramIdx).getValue(elIdx); i++) {
+                    param.setValue(elIdx, param.getLower() + i * delta);
+                    nestedLoop(depth + 1);
+                }
             }
 
         } else {

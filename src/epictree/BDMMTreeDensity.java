@@ -6,6 +6,7 @@ import beast.core.parameter.RealParameter;
 import beast.evolution.tree.MultiTypeNode;
 import beast.evolution.tree.Node;
 import beast.math.Binomial;
+import beast.math.GammaFunction;
 import beast.util.Randomizer;
 import multitypetree.distributions.MultiTypeTreeDistribution;
 
@@ -81,12 +82,6 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
         double[] migProp = new double[migModel.getNTypes()*migModel.getNTypes()];
         double totalBirthProp, totalDeathProp, totalSamplingProp, totalMigProp;
         double totalProp;
-
-        public Particle(Integer[] nList) {
-            this.n = new int[nList.length];
-            for (int i=0; i<nList.length; i++)
-                this.n[i] = nList[i];
-        }
 
         public Particle(int type) {
             this.n = new int[migModel.getNTypes()];
@@ -234,6 +229,8 @@ public class BDMMTreeDensity extends MultiTypeTreeDistribution {
             }
             logP += Math.log(totalWeight/nParticles);
         }
+
+        logP -= GammaFunction.lnGamma(mtTree.getLeafNodeCount() + 1);
 
         if (logP == Double.NEGATIVE_INFINITY)
             System.out.println("Zero density after sampling");
