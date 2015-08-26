@@ -62,7 +62,7 @@
 
     <run spec="DensityMapper">
 
-        <realParam id="birthRate" spec="RealParameter" value="0 0" lower="0.5" upper="1"/>
+        <realParam id="birthRate" spec="RealParameter" value="0 0" lower="0.5" upper="1.5"/>
         <steps spec="IntegerParameter" value="100"/>
 
         <!--realParam id="birthRate" spec="RealParameter" value="0 0" lower="5.8562" upper="10"/>
