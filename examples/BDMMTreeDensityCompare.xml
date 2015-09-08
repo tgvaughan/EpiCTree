@@ -13,7 +13,8 @@
     :master.outputs
     :master.postprocessors
     :epictree
-    :epictree.util'>
+    :epictree.util
+    :feast'>
 
     <!--input id="mtTree" spec='MultiTypeTreeFromNewick' typeLabel="location">
         <![CDATA[
@@ -60,30 +61,12 @@
         </flatTree>
     </input>
 
-    <run spec="DensityMapper">
+    <run spec="feast.mapping.DensityMapper">
 
         <realParam id="birthRate" spec="RealParameter" value="0 0" lower="0.5" upper="1.5"/>
         <steps spec="IntegerParameter" value="100"/>
 
-        <!--realParam id="birthRate" spec="RealParameter" value="0 0" lower="5.8562" upper="10"/>
-        <steps spec="IntegerParameter" value="1"/-->
-
         <distribution spec="BirthDeathMigrationModel" id="treeDensityDenise"
-                contemp="true" stateNumber="2">
-            <tree idref="mtTree"/>
-            <originBranch spec="RootBranchFromMultiTypeTree" multiTypeTree="@mtTree"/>
-            <frequencies spec="RealParameter" value="0.5 0.5"/>
-            <origin spec="RealParameter" value="7"/>
-            <rho spec="RealParameter" value="0.1 0.1"/>
-            <migrationMatrix spec="RealParameter" value="0.5 0.5"/>
-            <!--birthRate spec="RealParameter" value="1 1"/-->
-            <birthRate idref="birthRate"/>
-            <deathRate spec="RealParameter" value="0.02 0.02"/>
-            <samplingRate spec="RealParameter" value="0.0 0.0"/>
-            <!--removalProbability spec="RealParameter" value="1.0"/-->
-        </distribution>
-
-        <distribution spec="BirthDeathMigrationModel" id="treeDensityDeniseRK"
                 contemp="true" stateNumber="2" useRK="true">
             <tree idref="mtTree"/>
             <originBranch spec="RootBranchFromMultiTypeTree" multiTypeTree="@mtTree"/>
@@ -115,14 +98,12 @@
         <logger logEvery="1">
             <log idref="birthRate"/>
             <log idref="treeDensityDenise"/>
-            <log idref="treeDensityDeniseRK"/>
             <log idref="treeDensityPF"/>
         </logger>
 
         <logger logEvery="1" fileName="$(filebase)_output.log">
             <log idref="birthRate"/>
             <log idref="treeDensityDenise"/>
-            <log idref="treeDensityDeniseRK"/>
             <log idref="treeDensityPF"/>
         </logger>
 
